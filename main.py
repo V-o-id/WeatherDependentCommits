@@ -1,29 +1,34 @@
 import os
-import sys
-import subprocess
 import requests
+import argparse
+import subprocess
 
 weather_api_url = "https://archive-api.open-meteo.com/v1/archive"
 
 
 def main():
-    # TODO: if hosted on web, this error handling is probably unnecessary
-    if not sys.argv[1]:
-        print("No link to GitHub repository provided, abort.")
-        return
-    if not sys.argv[2]:
-        print("No value for latitude provided, choose fall-back option (48.303056).")
-        latitude = 48.303056
-    else:
-        latitude = sys.argv[2]
-    if not sys.argv[3]:
-        print("No value for longitude provided, choose fall-back option (14.290556).")
-        longitude = 14.290556
-    else:
-        longitude = sys.argv[3]
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "repository_url",
+        type=str,
+        help="Link to the GitHub repository"
+    )
+    parser.add_argument(
+        "latitude",
+        type=float,
+        help="Latitude of your position"
+    )
+    parser.add_argument(
+        "longitude",
+        type=float,
+        help="Longitude of you position"
+    )
+    args = parser.parse_args()
 
-    repository_url = sys.argv[1]
+    repository_url = args.repository_url
     repository_name = repository_url.split('/')[-1].split('.')[0]
+    latitude = args.latitude
+    longitude = args.longitude
 
     # Check if the repository directory exists
     if not os.path.exists(repository_name):
@@ -63,10 +68,11 @@ def main():
         else:
             commits_on_sunny_days += date_count[date]
 
-    print(f"Commits on rainy days: {commits_on_rainy_days}")
+    print(f"\nCommits on rainy days: {commits_on_rainy_days}")
     print(f"Commits on sunny days: {commits_on_sunny_days}")
     if commits_on_sunny_days > commits_on_rainy_days:
-        print("You are more productive on sunny days.\nBased on reliable data you actually can blame bad weather now!")
+        print("\nYou are more productive on sunny days.")
+        print("Based on reliable data processed by a sophisticated algorithm you actually can blame bad weather now!")
     else:
         print("You are more productive on rainy days.\nSeems like you enjoy coding when it rains.")
 
@@ -96,6 +102,3 @@ def get_weather_data(date, latitude, longitude):
 
 if __name__ == '__main__':
     main()
-
-# TODO: error handling (wrong input parameters, more than 10,000 days/requests)
-# TODO: host it on website
