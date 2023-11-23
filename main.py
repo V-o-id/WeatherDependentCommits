@@ -9,7 +9,7 @@ weather_api_url = "https://archive-api.open-meteo.com/v1/archive"
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "repository_url",
+        "repository",
         type=str,
         help="Link to the GitHub repository"
     )
@@ -21,26 +21,33 @@ def main():
     parser.add_argument(
         "longitude",
         type=float,
-        help="Longitude of you position"
+        help="Longitude of your position"
+    )
+    parser.add_argument(
+        "--d",
+        action="store_true",
+        help="Optional flag to take first argument as URL and download the repository."
+             "If not set, takes first argument as path."
     )
     args = parser.parse_args()
 
-    repository_url = args.repository_url
-    repository_name = repository_url.split('/')[-1].split('.')[0]
+    repository = args.repository
+    if args.d:
+        repository_name = repository.split('/')[-1].split('.')[0]
+        # Check if the repository directory exists
+        if not os.path.exists(repository_name):
+            # Clone the repository
+            subprocess.run(["git", "clone", repository])
+        else:
+            # If the repository already exists, pull the latest changes
+            subprocess.run(["git", "reset", "--hard"], cwd=repository_name)
+            subprocess.run(["git", "pull"], cwd=repository_name)
+        os.chdir(repository_name)
+    else:
+        os.chdir(repository)
+
     latitude = args.latitude
     longitude = args.longitude
-
-    # Check if the repository directory exists
-    if not os.path.exists(repository_name):
-        # Clone the repository
-        subprocess.run(["git", "clone", repository_url])
-    else:
-        # If the repository already exists, pull the latest changes
-        subprocess.run(["git", "reset", "--hard"], cwd=repository_name)
-        subprocess.run(["git", "pull"], cwd=repository_name)
-
-    # Navigate to the cloned repository
-    os.chdir(repository_name)
 
     # Run git log and capture the output
     git_log_result = subprocess.run(["git", "log", "--pretty=%as"], stdout=subprocess.PIPE, text=True)
@@ -61,7 +68,7 @@ def main():
     commits_on_sunny_days = 0
 
     # For each day, make API request and check if it rained.
-    # 5 (in mm per square meter) is quite an arbitrary number to determine if it was a rainy day.
+    # 5 (in mm per square meter) is quite an arbitrary number to determine if it was a rainy day. ¯\_(ツ)_/¯
     for date in date_count:
         if get_weather_data(date[0:10], latitude, longitude) >= 5:
             commits_on_rainy_days += date_count[date]
@@ -72,9 +79,9 @@ def main():
     print(f"Commits on sunny days: {commits_on_sunny_days}")
     if commits_on_sunny_days > commits_on_rainy_days:
         print("\nYou are more productive on sunny days.")
-        print("Based on reliable data processed by a sophisticated algorithm you actually can blame bad weather now!")
+        print("Based on reliable data processed by a sophisticated algorithm you CAN blame bad weather now!")
     else:
-        print("You are more productive on rainy days.\nSeems like you enjoy coding when it rains.")
+        print("You are more productive on rainy days.\nSeems like for you, staying at home means getting things done.")
 
 
 def get_weather_data(date, latitude, longitude):
