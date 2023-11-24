@@ -16,7 +16,10 @@ Support your dear weather-blaming with reliable data!
     ```
     $ python weather.py <https://github.com/owner/repo.git> <latitude-of-your-location> <longitude-of-your-location> --d
     ```
-  If you are too lazy to look up your coordinates, you can use those for Linz, Austria: 48.303056 14.290556
+  * Example:
+    ```
+    $ python weather.py https://github.com/V-o-id/WeatherDependentCommits.git 48.303056 14.290556 --d
+    ```
 
 For each day a commit was made, a request to the meteorological API will be made, so the script does not scale well with lots of commits.
 Also the limit of requests to the API is 10,000 per day, so if you committed every day for 28 years to your repository, you won't be able to use this tool (but you have my respects).
