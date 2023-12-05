@@ -2,6 +2,7 @@ import os
 import requests
 import argparse
 import subprocess
+import matplotlib.pyplot as plt
 
 weather_api_url = "https://archive-api.open-meteo.com/v1/archive"
 
@@ -75,6 +76,16 @@ def main():
         else:
             commits_on_sunny_days += date_count[date]
 
+    # Plotting
+    labels = [f'Rainy Days\n({commits_on_rainy_days} commits)',
+              f'Sunny Days\n({commits_on_sunny_days} commits)']
+    values = [commits_on_rainy_days, commits_on_sunny_days]
+    plt.pie(values, labels=labels, autopct="%1.1f%%", colors=["blue", "yellow"])
+    plt.axis("equal")
+    plt.title("Distribution of Commits on Rainy vs. Sunny Days")
+    plt.show()
+
+    # Console output
     print(f"\nCommits on rainy days: {commits_on_rainy_days}")
     print(f"Commits on sunny days: {commits_on_sunny_days}")
     if commits_on_sunny_days > commits_on_rainy_days:
