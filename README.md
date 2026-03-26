@@ -1,27 +1,80 @@
 # WeatherDependentCommits
-### A nonsensical little script to analyze your commit log with weather data.
-Does your back hurt? Does your coffe taste bad? Are you not feeling like making some commits today?
-Well, it's probably the weather's fault.
-Support your dear weather-blaming with reliable data!
 
-## How to use
-* Be sure to have Git installed on your device
-* Download the Python script.
-* Open your terminal in its location and run it.
-* There are two options for running the script:
-  * Give the path to your local repository
-    ```
-    python weather.py <absolute-path-to-your-repo> <latitude-of-your-location> <longitude-of-your-location>
-    ```
-  * Give the URL to a repository on GitHub and clone it to the same folder as the script
-    ```
-    python weather.py <https://github.com/owner/repo.git> <latitude-of-your-location> <longitude-of-your-location> --d
-    ```
-  * Example:
-    ```
-    python weather.py https://github.com/V-o-id/WeatherDependentCommits.git 48.303056 14.290556 --d
-    ```
- * Find out how many commits you made on sunny vs. rainy days (threshold for a rainy day is 5mm/day, which is quite small).
+A playful project to answer an important question: are your commits weather-dependent?
 
-For each day commits were made, a request to the meteorological API will be made, so the script does not scale well with lots of commits.
-Also the limit of requests to the API is 10,000 per day, so if you committed every day for 28 years to your repository, you won't be able to use this tool (but you have my respects).
+This repository now contains:
+
+- `weather.py`: the original Python CLI script.
+- `web/`: a Vue 3 web app (v1) that runs fully client-side and can be deployed to GitHub Pages.
+
+## Web app (Vue)
+
+The web app analyzes a public GitHub repository (default branch), fetches historical rain data from Open-Meteo, and shows:
+
+- rainy vs. dry commit split
+- adjustable rain threshold slider
+- monthly trend view
+- day-of-week insights
+- funny verdict text
+
+### Run locally
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+Then open the local URL shown by Vite.
+
+### Build locally
+
+```bash
+cd web
+npm run build
+```
+
+### GitHub Pages deployment
+
+A GitHub Actions workflow is included at `.github/workflows/deploy-web.yml`.
+
+- It builds `web/` and deploys `web/dist` to GitHub Pages.
+- The Vite base path is set to `/WeatherDependentCommits/` in `web/vite.config.js`.
+- Expected project page URL: `https://v-o-id.github.io/WeatherDependentCommits/`
+
+To enable deployment in GitHub:
+
+1. Open repository settings -> Pages.
+2. Under Build and deployment, choose Source: GitHub Actions.
+3. Push to `master` (or run the workflow manually).
+
+## Original Python script
+
+The original CLI still works for local analysis.
+
+### Usage
+
+Make sure Git and Python are installed.
+
+- Analyze an existing local repository path:
+
+```bash
+python weather.py <absolute-path-to-your-repo> <latitude> <longitude>
+```
+
+- Clone a GitHub repo first, then analyze it:
+
+```bash
+python weather.py <https://github.com/owner/repo.git> <latitude> <longitude> --d
+```
+
+Example:
+
+```bash
+python weather.py https://github.com/V-o-id/WeatherDependentCommits.git 48.303056 14.290556 --d
+```
+
+Notes:
+
+- Current web app and script target public repository data.
+- Unauthenticated GitHub API requests are rate-limited.
