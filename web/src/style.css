@@ -129,6 +129,42 @@ p {
   align-items: end;
 }
 
+.city-picker,
+.city-results,
+.run-btn {
+  grid-column: 1 / -1;
+}
+
+.city-picker {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.6rem;
+  align-items: end;
+}
+
+.city-search {
+  white-space: nowrap;
+}
+
+.city-results {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.city-result {
+  background: #ffffff;
+  color: var(--text);
+  border: 1px solid #c7d5e4;
+  font-weight: 600;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  padding: 0.45rem 0.7rem;
+}
+
+.city-result:hover {
+  background: #f0f7ff;
+}
+
 label {
   display: grid;
   gap: 0.4rem;
@@ -314,6 +350,10 @@ button:disabled {
 
   .weekday-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .city-picker {
+    grid-template-columns: 1fr;
   }
 }
 

@@ -4,6 +4,10 @@ import { computed, ref } from "vue";
 const repoInput = ref("V-o-id/WeatherDependentCommits");
 const latitude = ref("48.303056");
 const longitude = ref("14.290556");
+const cityQuery = ref("");
+const cityResults = ref([]);
+const isCityLoading = ref(false);
+const locationLabel = ref("");
 const rainThreshold = ref(5);
 
 const isLoading = ref(false);
@@ -132,6 +136,61 @@ async function fetchRainByDate(lat, lon, startDate, endDate) {
   }
 
   return rainMap;
+}
+
+function formatCityResult(result) {
+  const parts = [result.name, result.admin1, result.country].filter(Boolean);
+  return parts.join(", ");
+}
+
+async function searchCities() {
+  const query = cityQuery.value.trim();
+  cityResults.value = [];
+
+  if (!query) {
+    errorMessage.value = "Enter a city name to search.";
+    return;
+  }
+
+  errorMessage.value = "";
+  isCityLoading.value = true;
+
+  try {
+    const params = new URLSearchParams({
+      name: query,
+      count: "8",
+      language: "en",
+      format: "json",
+    });
+
+    const response = await fetch(`https://geocoding-api.open-meteo.com/v1/search?${params.toString()}`);
+    if (!response.ok) {
+      throw new Error(`City search failed (${response.status}).`);
+    }
+
+    const payload = await response.json();
+    const results = Array.isArray(payload?.results) ? payload.results : [];
+
+    cityResults.value = results.map((result) => ({
+      label: formatCityResult(result),
+      latitude: result.latitude,
+      longitude: result.longitude,
+    }));
+
+    if (cityResults.value.length === 0) {
+      errorMessage.value = "No matching places found.";
+    }
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : "Could not search cities.";
+  } finally {
+    isCityLoading.value = false;
+  }
+}
+
+function applyCity(city) {
+  latitude.value = String(city.latitude);
+  longitude.value = String(city.longitude);
+  locationLabel.value = city.label;
 }
 
 function monthKey(dateString) {
@@ -283,6 +342,7 @@ async function runAnalysis() {
         owner,
         repo,
         branch,
+        locationLabel: locationLabel.value,
         startDate,
         endDate,
       },
@@ -330,13 +390,36 @@ async function runAnalysis() {
             <input v-model="longitude" inputmode="decimal" placeholder="14.290556" />
           </label>
 
-          <button type="submit" :disabled="isLoading">
+          <div class="city-picker">
+            <label>
+              City (optional)
+              <input
+                v-model="cityQuery"
+                placeholder="Search city, e.g. Vienna"
+                @keydown.enter.prevent="searchCities"
+              />
+            </label>
+            <button type="button" class="city-search" :disabled="isCityLoading" @click="searchCities">
+              {{ isCityLoading ? "Searching..." : "Find city" }}
+            </button>
+          </div>
+
+          <div v-if="cityResults.length" class="city-results">
+            <button
+              v-for="city in cityResults"
+              :key="`${city.label}-${city.latitude}-${city.longitude}`"
+              type="button"
+              class="city-result"
+              @click="applyCity(city)"
+            >
+              {{ city.label }} ({{ city.latitude.toFixed(2) }}, {{ city.longitude.toFixed(2) }})
+            </button>
+          </div>
+
+          <button type="submit" class="run-btn" :disabled="isLoading">
             {{ isLoading ? "Analyzing..." : "Run analysis" }}
           </button>
         </form>
-        <p class="hint">
-          No backend and no GitHub token required for v1. Public repositories only.
-        </p>
         <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
         <p v-for="warning in warnings" :key="warning" class="warning">{{ warning }}</p>
       </section>
@@ -348,6 +431,7 @@ async function runAnalysis() {
           <strong>{{ computedStats.meta.branch }}</strong> from
           {{ computedStats.meta.startDate }} to {{ computedStats.meta.endDate }}.
         </p>
+        <p v-if="computedStats.meta.locationLabel" class="meta">Location: {{ computedStats.meta.locationLabel }}</p>
 
         <div class="split-grid">
           <article class="metric rainy">
