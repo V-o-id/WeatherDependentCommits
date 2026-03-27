@@ -1,23 +1,49 @@
-<script setup>
+<script setup lang="ts">
 import { computed, ref } from "vue";
+
+type CityResult = {
+  label: string;
+  latitude: number;
+  longitude: number;
+};
+
+type EnrichedRow = {
+  date: string;
+  month: string;
+  weekday: number;
+  commits: number;
+  rain: number;
+};
+
+type AnalysisData = {
+  rows: EnrichedRow[];
+  meta: {
+    owner: string;
+    repo: string;
+    branch: string;
+    locationLabel: string;
+    startDate: string;
+    endDate: string;
+  };
+};
 
 const repoInput = ref("V-o-id/WeatherDependentCommits");
 const latitude = ref("48.303056");
 const longitude = ref("14.290556");
 const cityQuery = ref("");
-const cityResults = ref([]);
+const cityResults = ref<CityResult[]>([]);
 const isCityLoading = ref(false);
 const locationLabel = ref("");
 const rainThreshold = ref(5);
 
 const isLoading = ref(false);
 const errorMessage = ref("");
-const warnings = ref([]);
-const analysisData = ref(null);
+const warnings = ref<string[]>([]);
+const analysisData = ref<AnalysisData | null>(null);
 
 const weekdayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-function parseRepositoryInput(value) {
+function parseRepositoryInput(value: string) {
   const input = value.trim();
   if (!input) {
     throw new Error("Please enter a repository in owner/repo format or a GitHub URL.");
@@ -42,7 +68,7 @@ function parseRepositoryInput(value) {
   return { owner: segments[0], repo: segments[1].replace(/\.git$/, "") };
 }
 
-async function fetchJson(url) {
+async function fetchJson(url: string) {
   const response = await fetch(url, {
     headers: {
       Accept: "application/vnd.github+json",
@@ -64,7 +90,7 @@ async function fetchJson(url) {
   return response.json();
 }
 
-async function fetchCommitDates(owner, repo, branch) {
+async function fetchCommitDates(owner: string, repo: string, branch: string) {
   const commitDates = [];
   const perPage = 100;
   const maxPages = 30;
@@ -100,7 +126,7 @@ async function fetchCommitDates(owner, repo, branch) {
   return commitDates;
 }
 
-function countCommitsByDate(commitDates) {
+function countCommitsByDate(commitDates: string[]) {
   const map = new Map();
   for (const day of commitDates) {
     map.set(day, (map.get(day) || 0) + 1);
@@ -108,7 +134,7 @@ function countCommitsByDate(commitDates) {
   return map;
 }
 
-async function fetchRainByDate(lat, lon, startDate, endDate) {
+async function fetchRainByDate(lat: number, lon: number, startDate: string, endDate: string) {
   const params = new URLSearchParams({
     latitude: String(lat),
     longitude: String(lon),
@@ -138,7 +164,7 @@ async function fetchRainByDate(lat, lon, startDate, endDate) {
   return rainMap;
 }
 
-function formatCityResult(result) {
+function formatCityResult(result: { name?: string; admin1?: string; country?: string }) {
   const parts = [result.name, result.admin1, result.country].filter(Boolean);
   return parts.join(", ");
 }
@@ -171,7 +197,7 @@ async function searchCities() {
     const payload = await response.json();
     const results = Array.isArray(payload?.results) ? payload.results : [];
 
-    cityResults.value = results.map((result) => ({
+    cityResults.value = results.map((result: { name?: string; admin1?: string; country?: string; latitude: number; longitude: number }) => ({
       label: formatCityResult(result),
       latitude: result.latitude,
       longitude: result.longitude,
@@ -187,21 +213,21 @@ async function searchCities() {
   }
 }
 
-function applyCity(city) {
+function applyCity(city: CityResult) {
   latitude.value = String(city.latitude);
   longitude.value = String(city.longitude);
   locationLabel.value = city.label;
 }
 
-function monthKey(dateString) {
+function monthKey(dateString: string) {
   return dateString.slice(0, 7);
 }
 
-function getWeekday(dateString) {
+function getWeekday(dateString: string) {
   return new Date(`${dateString}T00:00:00Z`).getUTCDay();
 }
 
-function buildEnrichedRows(commitCountByDate, rainByDate) {
+function buildEnrichedRows(commitCountByDate: Map<string, number>, rainByDate: Map<string, number>) {
   const dates = [...commitCountByDate.keys()].sort();
   return dates.map((date) => {
     const commits = commitCountByDate.get(date) || 0;
